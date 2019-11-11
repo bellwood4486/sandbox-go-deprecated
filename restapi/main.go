@@ -12,9 +12,9 @@ import (
 )
 
 type event struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	ID          string
+	Title       string
+	Description string
 }
 
 type allEvents []event
