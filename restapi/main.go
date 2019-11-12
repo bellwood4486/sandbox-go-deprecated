@@ -60,8 +60,11 @@ func getOneEvent(w http.ResponseWriter, r *http.Request) {
 	for _, e := range events {
 		if e.ID == eventId {
 			_ = json.NewEncoder(w).Encode(e)
+			return
 		}
 	}
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = fmt.Fprintf(w, "event not found: %q", eventId)
 }
 
 func getAllEvents(w http.ResponseWriter, _ *http.Request) {
@@ -110,7 +113,7 @@ func deleteEvent(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "event not found: %q", eventId)
 }
 
-func main() {
+func newRouter() *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", homeLink)
 	r.HandleFunc("/event", createEvent).Methods("POST")
@@ -118,6 +121,10 @@ func main() {
 	r.HandleFunc("/events/{id}", getOneEvent).Methods("GET")
 	r.HandleFunc("/events/{id}", updateEvent).Methods("PATCH")
 	r.HandleFunc("/events/{id}", deleteEvent).Methods("DELETE")
-	http.Handle("/", r)
+	return r
+}
+
+func main() {
+	http.Handle("/", newRouter())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
