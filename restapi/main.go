@@ -62,15 +62,13 @@ func createEvent(w http.ResponseWriter, r *http.Request) {
 
 func getOneEvent(w http.ResponseWriter, r *http.Request) {
 	eventId := mux.Vars(r)["id"]
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	for _, e := range events {
 		if e.ID == eventId {
-			_ = json.NewEncoder(w).Encode(e)
+			setOk(w, e)
 			return
 		}
 	}
-	w.WriteHeader(http.StatusNotFound)
-	_ = json.NewEncoder(w).Encode(structError{"not_found", eventId})
+	setNotFound(w, eventId)
 }
 
 func getAllEvents(w http.ResponseWriter, _ *http.Request) {
@@ -117,6 +115,35 @@ func deleteEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNotFound)
 	_, _ = fmt.Fprintf(w, "event not found: %q", eventId)
+}
+
+func setOk(w http.ResponseWriter, v interface{}) {
+	setJSONResponseHeader(w, http.StatusOK)
+	setJSONResponseBody(w, v)
+}
+
+func setNotFound(w http.ResponseWriter, id string) {
+	setJSONResponseHeader(w, http.StatusNotFound)
+	setJSONResponseBody(w, structError{"not_found", id})
+}
+
+func setInternalServerError(w http.ResponseWriter, err error) {
+	setJSONResponseHeader(w, http.StatusInternalServerError)
+	// InternalServerErrorでのエンコード失敗は、それ以上救う手立てがないのでpanicにする。
+	if err := json.NewEncoder(w).Encode(structError{"server_error", fmt.Sprint(err)}); err != nil {
+		panic(err)
+	}
+}
+
+func setJSONResponseHeader(w http.ResponseWriter, statusCode int) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
+}
+
+func setJSONResponseBody(w http.ResponseWriter, v interface{}) {
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		setInternalServerError(w, err)
+	}
 }
 
 func newRouter() *mux.Router {
