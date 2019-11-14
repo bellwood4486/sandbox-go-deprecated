@@ -39,25 +39,17 @@ func homeLink(w http.ResponseWriter, _ *http.Request) {
 func createEvent(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprintf(w, "invalid payload: %s", err)
+		setErrorResponse(w, http.StatusBadRequest, "invalid_payload", err)
 		return
 	}
 
 	var newEvent event
 	if err := json.Unmarshal(reqBody, &newEvent); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprintf(w, "invalid json: %s", err)
+		setErrorResponse(w, http.StatusBadRequest, "invalid_json", err)
 		return
 	}
 	events = append(events, newEvent)
-	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(newEvent); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = fmt.Fprintf(w, "json encoding failed: %s", err)
-		return
-	}
+	setResponse(w, http.StatusCreated, newEvent)
 }
 
 func getOneEvent(w http.ResponseWriter, r *http.Request) {
@@ -120,6 +112,16 @@ func deleteEvent(w http.ResponseWriter, r *http.Request) {
 func setOk(w http.ResponseWriter, v interface{}) {
 	setJSONResponseHeader(w, http.StatusOK)
 	setJSONResponseBody(w, v)
+}
+
+func setResponse(w http.ResponseWriter, statusCode int, v interface{}) {
+	setJSONResponseHeader(w, statusCode)
+	setJSONResponseBody(w, v)
+}
+
+func setErrorResponse(w http.ResponseWriter, statusCode int, kind string, err error) {
+	setJSONResponseHeader(w, statusCode)
+	setJSONResponseBody(w, structError{kind, fmt.Sprint(err)})
 }
 
 func setNotFound(w http.ResponseWriter, id string) {

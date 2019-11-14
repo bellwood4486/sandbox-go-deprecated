@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,12 +53,44 @@ func Test_getOneEvent(t *testing.T) {
 	}
 }
 
+func Test_createEvent(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+		wantBody string
+	}{
+		{
+			"created",
+			newArgs(http.MethodPost, "/event", GetReaderFromTestFile(t, "./testdata/main/Test_createEvent/created.json")),
+			http.StatusCreated,
+			"./testdata/main/Test_createEvent/created.golden",
+		},
+		{
+			"invalid json",
+			newArgs(http.MethodPost, "/event", GetReaderFromTestFile(t, "./testdata/main/Test_createEvent/invalid_json.json")),
+			http.StatusBadRequest,
+			"./testdata/main/Test_createEvent/invalid_json.golden",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newRouter().ServeHTTP(tt.args.w, tt.args.r)
+			AssertResponse(t, tt.args.w.Result(), tt.wantCode, tt.wantBody)
+		})
+	}
+}
+
 // AssertResponse assert response header and body.
 func AssertResponse(t *testing.T, res *http.Response, code int, path string) {
 	t.Helper()
 
 	AssertResponseHeader(t, res, code)
-	AssertResponseBodyWithFile(t, res, path)
+	if path == "" {
+		AssertResponseBodyEmpty(t, res)
+	} else {
+		AssertResponseBodyWithFile(t, res, path)
+	}
 }
 
 // AssertResponseHeader assert response header.
@@ -91,6 +124,14 @@ func AssertResponseBodyWithFile(t *testing.T, res *http.Response, path string) {
 	assert.JSONEq(t, rs, actual.String())
 }
 
+func AssertResponseBodyEmpty(t *testing.T, res *http.Response) {
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("unexpected error by ioutil.ReadAll() '%#v'", err)
+	}
+	assert.Empty(t, string(body))
+}
+
 // GetStringFromTestFile get string from test file.
 func GetStringFromTestFile(t *testing.T, path string) string {
 	t.Helper()
@@ -100,4 +141,9 @@ func GetStringFromTestFile(t *testing.T, path string) string {
 		t.Fatalf("unexpected error while opening file '%#v'", err)
 	}
 	return string(bt)
+}
+
+// GetReaderFromTestFile returns a reader of test file.
+func GetReaderFromTestFile(t *testing.T, path string) io.Reader {
+	return strings.NewReader(GetStringFromTestFile(t, path))
 }
