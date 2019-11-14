@@ -11,6 +11,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type structError struct {
+	Kind    string
+	Message string
+}
+
 type event struct {
 	ID          string
 	Title       string
@@ -22,8 +27,8 @@ type allEvents []event
 var events = allEvents{
 	{
 		ID:          "1",
-		Title:       "Introduction to Golang",
-		Description: "Come join us for a chance to learn how golang works and get to eventually try it out",
+		Title:       "Test Title",
+		Description: "Test Description",
 	},
 }
 
@@ -57,6 +62,7 @@ func createEvent(w http.ResponseWriter, r *http.Request) {
 
 func getOneEvent(w http.ResponseWriter, r *http.Request) {
 	eventId := mux.Vars(r)["id"]
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	for _, e := range events {
 		if e.ID == eventId {
 			_ = json.NewEncoder(w).Encode(e)
@@ -64,7 +70,7 @@ func getOneEvent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)
-	_, _ = fmt.Fprintf(w, "event not found: %q", eventId)
+	_ = json.NewEncoder(w).Encode(structError{"not_found", eventId})
 }
 
 func getAllEvents(w http.ResponseWriter, _ *http.Request) {
