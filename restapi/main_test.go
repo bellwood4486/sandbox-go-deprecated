@@ -89,10 +89,16 @@ func Test_deleteEvent(t *testing.T) {
 		wantBody string
 	}{
 		{
-			"not found",
+			"no content",
 			newArgs(http.MethodDelete, "/events/1", nil),
 			http.StatusNoContent,
 			"",
+		},
+		{
+			"not found",
+			newArgs(http.MethodDelete, "/events/100", nil),
+			http.StatusNotFound,
+			"./testdata/main/Test_deleteEvent/not_found.golden",
 		},
 	}
 	for _, tt := range tests {

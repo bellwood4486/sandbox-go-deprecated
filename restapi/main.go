@@ -41,28 +41,28 @@ func homeLink(w http.ResponseWriter, _ *http.Request) {
 func createEvent(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		setErrorResponse(w, http.StatusBadRequest, "invalid_payload", err)
+		setInvalidPayload(w, err)
 		return
 	}
 
 	var newEvent event
 	if err := json.Unmarshal(reqBody, &newEvent); err != nil {
-		setErrorResponse(w, http.StatusBadRequest, "invalid_json", err)
+		setInvalidJSON(w, err)
 		return
 	}
 	events = append(events, newEvent)
-	setResponse(w, http.StatusCreated, newEvent)
+	setCreated(w, newEvent)
 }
 
 func getOneEvent(w http.ResponseWriter, r *http.Request) {
 	eventId := mux.Vars(r)["id"]
 	for _, e := range events {
 		if e.ID == eventId {
-			setResponse(w, http.StatusOK, e)
+			setOK(w, e)
 			return
 		}
 	}
-	setErrorResponse(w, http.StatusNotFound, "not_found", errors.Errorf("event(%v) not found", eventId))
+	setNotFound(w, errors.Errorf("event(%v) not found", eventId))
 }
 
 func getAllEvents(w http.ResponseWriter, _ *http.Request) {
@@ -95,28 +95,46 @@ func updateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteEvent(w http.ResponseWriter, r *http.Request) {
-	eventId, ok := mux.Vars(r)["id"]
-	if !ok {
-		setErrorResponse(w, http.StatusBadRequest, "unspecified", errors.New("id unspecified"))
-		return
-	}
+	eventId := mux.Vars(r)["id"]
 	for i := range events {
 		if events[i].ID == eventId {
 			events = append(events[:i], events[i+1:]...)
-			setNoBodyResponse(w, http.StatusNoContent)
+			setNoContent(w)
 			return
 		}
 	}
-	setErrorResponse(w, http.StatusNotFound, "not_found", errors.Errorf("event(%v) not found", eventId))
+	setNotFound(w, errors.Errorf("event(%v) not found", eventId))
+}
+
+func setOK(w http.ResponseWriter, v interface{}) {
+	setResponse(w, http.StatusOK, v)
+}
+
+func setCreated(w http.ResponseWriter, v interface{}) {
+	setResponse(w, http.StatusCreated, v)
+}
+
+func setNoContent(w http.ResponseWriter) {
+	setResponse(w, http.StatusNoContent, nil)
+}
+
+func setNotFound(w http.ResponseWriter, err error) {
+	setErrorResponse(w, http.StatusNotFound, "not_found", err)
+}
+
+func setInvalidPayload(w http.ResponseWriter, err error) {
+	setErrorResponse(w, http.StatusBadRequest, "invalid_payload", err)
+}
+
+func setInvalidJSON(w http.ResponseWriter, err error) {
+	setErrorResponse(w, http.StatusBadRequest, "invalid_json", err)
 }
 
 func setResponse(w http.ResponseWriter, statusCode int, v interface{}) {
 	setJSONResponseHeader(w, statusCode)
-	setJSONResponseBody(w, v)
-}
-
-func setNoBodyResponse(w http.ResponseWriter, statusCode int) {
-	setJSONResponseHeader(w, statusCode)
+	if v != nil {
+		setJSONResponseBody(w, v)
+	}
 }
 
 func setErrorResponse(w http.ResponseWriter, statusCode int, kind string, err error) {
