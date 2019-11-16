@@ -73,15 +73,13 @@ func updateEvent(w http.ResponseWriter, r *http.Request) {
 	eventId := mux.Vars(r)["id"]
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprintf(w, "invalid payload: %s", err)
+		setInvalidPayload(w, err)
 		return
 	}
 
 	var updatedEvent event
 	if err := json.Unmarshal(reqBody, &updatedEvent); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprintf(w, "invalid json: %s", err)
+		setInvalidJSON(w, err)
 		return
 	}
 	for i := range events {
@@ -89,7 +87,8 @@ func updateEvent(w http.ResponseWriter, r *http.Request) {
 		if e.ID == eventId {
 			e.Title = updatedEvent.Title
 			e.Description = updatedEvent.Description
-			_ = json.NewEncoder(w).Encode(e)
+			setOK(w, e)
+			return
 		}
 	}
 }

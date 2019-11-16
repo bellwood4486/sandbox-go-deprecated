@@ -81,6 +81,34 @@ func Test_createEvent(t *testing.T) {
 	}
 }
 
+func Test_updateEvent(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+		wantBody string
+	}{
+		{
+			"ok",
+			newArgs(http.MethodPatch, "/events/1", GetReaderFromTestFile(t, "./testdata/main/Test_updateEvent/ok.json")),
+			http.StatusOK,
+			"./testdata/main/Test_updateEvent/ok.golden",
+		},
+		{
+			"invalid json",
+			newArgs(http.MethodPatch, "/events/1", GetReaderFromTestFile(t, "./testdata/main/Test_updateEvent/invalid_json.json")),
+			http.StatusBadRequest,
+			"./testdata/main/Test_updateEvent/invalid_json.golden",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newRouter().ServeHTTP(tt.args.w, tt.args.r)
+			AssertResponse(t, tt.args.w.Result(), tt.wantCode, tt.wantBody)
+		})
+	}
+}
+
 func Test_deleteEvent(t *testing.T) {
 	tests := []struct {
 		name     string
