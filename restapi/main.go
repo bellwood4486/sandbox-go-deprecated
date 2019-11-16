@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"github.com/gorilla/mux"
 )
 
@@ -56,11 +58,11 @@ func getOneEvent(w http.ResponseWriter, r *http.Request) {
 	eventId := mux.Vars(r)["id"]
 	for _, e := range events {
 		if e.ID == eventId {
-			setOk(w, e)
+			setResponse(w, http.StatusOK, e)
 			return
 		}
 	}
-	setNotFound(w, eventId)
+	setErrorResponse(w, http.StatusNotFound, "not_found", errors.Errorf("event(%v) not found", eventId))
 }
 
 func getAllEvents(w http.ResponseWriter, _ *http.Request) {
@@ -95,23 +97,17 @@ func updateEvent(w http.ResponseWriter, r *http.Request) {
 func deleteEvent(w http.ResponseWriter, r *http.Request) {
 	eventId, ok := mux.Vars(r)["id"]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = fmt.Fprintf(w, "id unspecified")
+		setErrorResponse(w, http.StatusBadRequest, "unspecified", errors.New("id unspecified"))
+		return
 	}
 	for i := range events {
 		if events[i].ID == eventId {
 			events = append(events[:i], events[i+1:]...)
-			w.WriteHeader(http.StatusNoContent)
+			setNoBodyResponse(w, http.StatusNoContent)
 			return
 		}
 	}
-	w.WriteHeader(http.StatusNotFound)
-	_, _ = fmt.Fprintf(w, "event not found: %q", eventId)
-}
-
-func setOk(w http.ResponseWriter, v interface{}) {
-	setJSONResponseHeader(w, http.StatusOK)
-	setJSONResponseBody(w, v)
+	setErrorResponse(w, http.StatusNotFound, "not_found", errors.Errorf("event(%v) not found", eventId))
 }
 
 func setResponse(w http.ResponseWriter, statusCode int, v interface{}) {
@@ -119,22 +115,12 @@ func setResponse(w http.ResponseWriter, statusCode int, v interface{}) {
 	setJSONResponseBody(w, v)
 }
 
-func setErrorResponse(w http.ResponseWriter, statusCode int, kind string, err error) {
+func setNoBodyResponse(w http.ResponseWriter, statusCode int) {
 	setJSONResponseHeader(w, statusCode)
-	setJSONResponseBody(w, structError{kind, fmt.Sprint(err)})
 }
 
-func setNotFound(w http.ResponseWriter, id string) {
-	setJSONResponseHeader(w, http.StatusNotFound)
-	setJSONResponseBody(w, structError{"not_found", id})
-}
-
-func setInternalServerError(w http.ResponseWriter, err error) {
-	setJSONResponseHeader(w, http.StatusInternalServerError)
-	// InternalServerErrorでのエンコード失敗は、それ以上救う手立てがないのでpanicにする。
-	if err := json.NewEncoder(w).Encode(structError{"server_error", fmt.Sprint(err)}); err != nil {
-		panic(err)
-	}
+func setErrorResponse(w http.ResponseWriter, statusCode int, kind string, err error) {
+	setResponse(w, statusCode, structError{kind, fmt.Sprint(err)})
 }
 
 func setJSONResponseHeader(w http.ResponseWriter, statusCode int) {
@@ -144,7 +130,11 @@ func setJSONResponseHeader(w http.ResponseWriter, statusCode int) {
 
 func setJSONResponseBody(w http.ResponseWriter, v interface{}) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		setInternalServerError(w, err)
+		setJSONResponseHeader(w, http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(structError{"server_error", fmt.Sprint(err)}); err != nil {
+			// InternalServerErrorでのエンコード失敗は、それ以上救う手立てがないのでpanicにする。
+			panic(err)
+		}
 	}
 }
 

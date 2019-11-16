@@ -81,6 +81,28 @@ func Test_createEvent(t *testing.T) {
 	}
 }
 
+func Test_deleteEvent(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+		wantBody string
+	}{
+		{
+			"not found",
+			newArgs(http.MethodDelete, "/events/1", nil),
+			http.StatusNoContent,
+			"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newRouter().ServeHTTP(tt.args.w, tt.args.r)
+			AssertResponse(t, tt.args.w.Result(), tt.wantCode, tt.wantBody)
+		})
+	}
+}
+
 // AssertResponse assert response header and body.
 func AssertResponse(t *testing.T, res *http.Response, code int, path string) {
 	t.Helper()
