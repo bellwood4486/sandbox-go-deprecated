@@ -1,0 +1,49 @@
+# https://github.com/fcsonline/drill
+
+---
+
+threads: 1
+base: 'http://localhost:8080'
+iterations: 2
+rampup: 2
+
+plan:
+#  - name: Create user v1
+#    request:
+#      url: /users
+#      method: POST
+#      body: '{"id": 1, "name": "taro"}'
+
+#  - name: Create user v2
+#    request:
+#      url: /users
+#      method: POST
+#      body: |-
+#        {
+#          "id": 1,
+#          "name": "taro"
+#        }
+
+#  - name: Create user v3
+#    request:
+#      url: /users
+#      method: POST
+#      body: |-
+#        {
+#          "id": {{ item }},
+#          "name": "taro"
+#        }
+#    with_items:
+#      - 1
+#      - 2
+
+  - name: Create user v4
+    request:
+      url: /users
+      method: POST
+      body: |-
+        {
+          "id": {{ item.id }},
+          "name": {{ item.name }}
+        }
+    with_items_from_csv: ./fixtures/users.csv
