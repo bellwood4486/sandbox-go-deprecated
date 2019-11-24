@@ -44,6 +44,6 @@ plan:
       body: |-
         {
           "id": {{ item.id }},
-          "name": {{ item.name }}
+          "name": "{{ item.name }}"
         }
     with_items_from_csv: ./fixtures/users.csv

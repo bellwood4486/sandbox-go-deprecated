@@ -17,13 +17,21 @@ type user struct {
 
 var users = map[int]user{}
 
+func listUsers(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s: %s\n", r.Method, r.URL)
+}
+
 func createUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s: %s\n", r.Method, r.URL)
+
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = fmt.Fprintf(w, "invalid payload: %v\n", err)
 		return
 	}
+
+	fmt.Printf("%s\n", reqBody)
 
 	var newUser user
 	if err := json.Unmarshal(reqBody, &newUser); err != nil {
@@ -38,6 +46,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
+	r.HandleFunc("/users", listUsers).Methods(http.MethodGet)
 	r.HandleFunc("/users", createUser).Methods(http.MethodPost)
 	return r
 }
