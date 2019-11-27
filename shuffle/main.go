@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -13,7 +15,11 @@ type Shuffler struct {
 	totalPercentage int
 }
 
+var once sync.Once
+
 func NewShuffler() *Shuffler {
+	once.Do(func() { rand.Seed(time.Now().Unix()) })
+
 	return &Shuffler{
 		data:            make(map[int]string, 100),
 		totalPercentage: 0,
