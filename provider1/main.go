@@ -165,7 +165,7 @@ func main() {
 	fmt.Println(b)
 
 	//dataSource := []string{"アルファ", "ベータ", "ガンマ"}
-	//f := provider(dataSource)
+	//f := provider1(dataSource)
 	//fmt.Println(f())
 	//
 	//data2 := [][]string{
