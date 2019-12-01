@@ -5,25 +5,24 @@ import (
 	"math/rand"
 	"time"
 
+	ds "github.com/bellwood4486/sandbox-go/provider2/datasource"
 	"github.com/bellwood4486/sandbox-go/provider2/template"
-
-	"github.com/bellwood4486/sandbox-go/provider2/datasource"
 )
 
 var t1 = template.RequestTemplate{
 	Path: "/api/{{ .Name }}",
 	Body: `id-{{ .Timestamp }} {{ .Name }} {{ .AAA }} {{ .BBB }} `,
-	Providers: datasource.DataProviders{
-		datasource.Timestamp{"Timestamp"},
-		datasource.SingleData{"Name", []string{"a", "b", "c"}},
-		datasource.GroupData{[]string{"AAA", "BBB"}, [][]string{{"1", "2"}, {"3", "4"}}},
+	Providers: ds.DataProviders{
+		ds.Timestamp{Key: "Timestamp"},
+		ds.SingleData{Key: "Name", Source: &ds.Names},
+		ds.GroupData{Keys: []string{"AAA", "BBB"}, Source: &ds.Groups},
 	},
 }
 
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	m := t1.Providers.TemplateParamMap()
+	m := t1.Providers.ParameterMap()
 	fmt.Println(m)
 
 	p := t1.InjectToPath(m)

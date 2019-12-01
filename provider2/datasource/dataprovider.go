@@ -9,7 +9,7 @@ import (
 // DataProviders contains ...
 type DataProviders []DataProvider
 
-func (d DataProviders) TemplateParamMap() map[string]string {
+func (d DataProviders) ParameterMap() map[string]string {
 	m := make(map[string]string)
 	for _, p := range d {
 		for k, v := range p.Provide() {
@@ -26,23 +26,23 @@ type DataProvider interface {
 
 // SingleData provides ...
 type SingleData struct {
-	Key        string
-	DataSource []string
+	Key    string
+	Source *[]string
 }
 
 func (p SingleData) Provide() map[string]string {
-	value := p.DataSource[rand.Intn(len(p.DataSource))]
+	value := (*p.Source)[rand.Intn(len(*p.Source))]
 	return map[string]string{p.Key: value}
 }
 
 // GroupData provides ...
 type GroupData struct {
-	Keys       []string
-	DataSource [][]string
+	Keys   []string
+	Source *[][]string
 }
 
 func (p GroupData) Provide() map[string]string {
-	values := p.DataSource[rand.Intn(len(p.DataSource))]
+	values := (*p.Source)[rand.Intn(len(*p.Source))]
 	if len(p.Keys) != len(values) {
 		panic("length difference")
 	}
