@@ -30,7 +30,7 @@ func roundRobin(src []map[string]string) SelectorFunc {
 	}
 }
 
-func once(src []map[string]string) SelectorFunc {
+func roundRobinOnce(src []map[string]string) SelectorFunc {
 	current := -1
 	return func() (map[string]string, error) {
 		if current == len(src)-1 {
