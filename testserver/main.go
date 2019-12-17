@@ -1,35 +1,31 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
+	"net/http/httputil"
 	"time"
 )
 
-func handle(_ http.ResponseWriter, r *http.Request) {
-	fmt.Printf("------\n")
-	fmt.Printf("method: %v\n", r.Method)
-	fmt.Printf("header: %v\n", r.Header)
-	fmt.Printf("uri: %v\n", r.RequestURI)
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("failed to read body: %v\n", err)
-	}
-	fmt.Printf("body: %v\n", string(buf))
-
-	time.Sleep(500 * time.Millisecond)
-}
-
 func main() {
-	listener, err := net.Listen("tcp", ":0")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("using port:", listener.Addr().(*net.TCPAddr).Port)
+	addr := flag.String("addr", ":8080", "address to listen")
+	sleep := flag.Duration("sleep", 500, "milliseconds to sleep")
+	flag.Parse()
 
-	http.HandleFunc("/", handle)
-	log.Fatal(http.Serve(listener, nil))
+	http.HandleFunc("/", func(writer http.ResponseWriter, r *http.Request) {
+		time.Sleep(*sleep * time.Millisecond)
+
+		buf, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			log.Printf("failed to read body: %v\n", err)
+		}
+		fmt.Println(string(buf))
+		fmt.Println("--------------")
+	})
+
+	fmt.Printf("listen to %q\n", *addr)
+	fmt.Printf("sleep %d ms\n", *sleep)
+	log.Fatal(http.ListenAndServe(*addr, nil))
 }
