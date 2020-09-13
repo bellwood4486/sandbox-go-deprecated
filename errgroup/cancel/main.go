@@ -8,10 +8,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func setupSomething() {
-	time.Sleep(100 * time.Millisecond)
-}
-
 func doSomething(i, j int) error {
 	if i == 5 && j == 3 {
 		return fmt.Errorf("error: goroutine(%d)", i)
@@ -27,7 +23,6 @@ func before() {
 	for i := 0; i < 20; i++ {
 		i := i
 		eg.Go(func() error {
-			setupSomething()
 			begin := time.Now()
 			for j := 0; j < i; j++ {
 				if err := doSomething(i, j); err != nil {
@@ -52,7 +47,6 @@ func after() {
 	for i := 0; i < 20; i++ {
 		i := i
 		eg.Go(func() error {
-			setupSomething()
 			begin := time.Now()
 			for j := 0; j < i; j++ {
 				select {
