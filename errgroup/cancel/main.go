@@ -20,8 +20,9 @@ func doSomething(i, j int) error {
 	return nil
 }
 
+// エラーが起こってもすべてのゴルーチンの完了を待つ。
 func before() {
-	eg, _ := errgroup.WithContext(context.Background())
+	eg := errgroup.Group{}
 
 	for i := 0; i < 20; i++ {
 		i := i
@@ -29,15 +30,9 @@ func before() {
 			setupSomething()
 			begin := time.Now()
 			for j := 0; j < i; j++ {
-				select {
-				//case <-ctx.Done():
-				//	fmt.Printf("goroutine(%d) -> canceled\n", i)
-				//	return nil
-				default:
-					if err := doSomething(i, j); err != nil {
-						fmt.Printf("goroutine(%d) -> error\n", i)
-						return err
-					}
+				if err := doSomething(i, j); err != nil {
+					fmt.Printf("goroutine(%d) -> error\n", i)
+					return err
 				}
 			}
 			fmt.Printf("goroutine(%d) -> done %v\n", i, time.Since(begin))
@@ -50,6 +45,7 @@ func before() {
 	}
 }
 
+// エラーが発生したら、他の未完了のゴルーチンは処理を中断する
 func after() {
 	eg, ctx := errgroup.WithContext(context.Background())
 
