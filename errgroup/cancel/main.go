@@ -8,10 +8,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func sometimeError(i, j int) error {
+func setupSomething() {
+	time.Sleep(100 * time.Millisecond)
+}
+
+func doSomething(i, j int) error {
 	if i == 5 && j == 3 {
 		return fmt.Errorf("error: goroutine(%d)", i)
 	}
+	time.Sleep(100 * time.Millisecond) // do something
 	return nil
 }
 
@@ -21,7 +26,7 @@ func before() {
 	for i := 0; i < 20; i++ {
 		i := i
 		eg.Go(func() error {
-			time.Sleep(100 * time.Millisecond)
+			setupSomething()
 			begin := time.Now()
 			for j := 0; j < i; j++ {
 				select {
@@ -29,11 +34,10 @@ func before() {
 				//	fmt.Printf("goroutine(%d) -> canceled\n", i)
 				//	return nil
 				default:
-					if err := sometimeError(i, j); err != nil {
+					if err := doSomething(i, j); err != nil {
 						fmt.Printf("goroutine(%d) -> error\n", i)
 						return err
 					}
-					time.Sleep(100 * time.Millisecond)
 				}
 			}
 			fmt.Printf("goroutine(%d) -> done %v\n", i, time.Since(begin))
@@ -42,7 +46,7 @@ func before() {
 	}
 
 	if err := eg.Wait(); err != nil {
-		fmt.Printf("-----\nerror occured: %v\n", err)
+		fmt.Printf("error occured: %v\n", err)
 	}
 }
 
@@ -52,7 +56,7 @@ func after() {
 	for i := 0; i < 20; i++ {
 		i := i
 		eg.Go(func() error {
-			time.Sleep(100 * time.Millisecond)
+			setupSomething()
 			begin := time.Now()
 			for j := 0; j < i; j++ {
 				select {
@@ -60,11 +64,10 @@ func after() {
 					fmt.Printf("goroutine(%d) -> canceled\n", i)
 					return nil
 				default:
-					if err := sometimeError(i, j); err != nil {
+					if err := doSomething(i, j); err != nil {
 						fmt.Printf("goroutine(%d) -> error\n", i)
 						return err
 					}
-					time.Sleep(100 * time.Millisecond)
 				}
 			}
 			fmt.Printf("goroutine(%d) -> done %v\n", i, time.Since(begin))
@@ -73,16 +76,18 @@ func after() {
 	}
 
 	if err := eg.Wait(); err != nil {
-		fmt.Printf("-----\nerror occured: %v\n", err)
+		fmt.Printf("error occured: %v\n", err)
 	}
 }
 
 func main() {
 	start := time.Now()
 	before()
-	fmt.Printf("[before] total time: %v", time.Since(start))
+	fmt.Printf("[before] total time: %v\n", time.Since(start))
+
+	fmt.Println("----")
 
 	start = time.Now()
 	after()
-	fmt.Printf("[after] total time: %v", time.Since(start))
+	fmt.Printf("[after] total time: %v\n", time.Since(start))
 }
